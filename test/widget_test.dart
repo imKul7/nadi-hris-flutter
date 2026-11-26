@@ -94,7 +94,7 @@ void main() {
     await tester.tap(find.text('Data pribadi'));
     await tester.pumpAndSettle();
     expect(find.text('EMP-00042'), findsOneWidget);
-    await tester.pageBack();
+    await tester.tap(find.byTooltip('Tutup'));
     await tester.pumpAndSettle();
 
     await tester.tap(find.text('Preferensi'));
@@ -102,7 +102,7 @@ void main() {
     expect(find.text('Tampilkan ID karyawan'), findsOneWidget);
     await tester.tap(find.byKey(const Key('demo_show_employee_id')));
     await tester.pumpAndSettle();
-    await tester.pageBack();
+    await tester.tap(find.byTooltip('Tutup'));
     await tester.pumpAndSettle();
     expect(find.text('ID: EMP-00042'), findsNothing);
 
