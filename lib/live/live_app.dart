@@ -708,7 +708,7 @@ class _ProfileState extends State<_Profile> {
                 _UI.title(session.name, size: 16),
                 if (session.showDepartment)
                   _UI.text(
-                    _roleName(session.role) + ' · ' + session.department,
+                    '${_roleName(session.role)} · ${session.department}',
                     size: 12,
                     color: _C.grey,
                   )
