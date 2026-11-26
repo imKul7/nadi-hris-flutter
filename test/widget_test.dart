@@ -39,4 +39,40 @@ void main() {
 
     expect(find.text('Kirim Pengajuan'), findsOneWidget);
   });
+
+  testWidgets('login responsive mobile 390x844 tanpa layout overflow', (tester) async {
+    tester.view.physicalSize = const Size(390, 844);
+    tester.view.devicePixelRatio = 1;
+    addTearDown(tester.view.resetPhysicalSize);
+    addTearDown(tester.view.resetDevicePixelRatio);
+
+    await tester.pumpWidget(const NadiApp());
+    await tester.pumpAndSettle();
+
+    expect(find.text('Satu ritme.\nUntuk seluruh tim.'), findsOneWidget);
+    expect(find.text('Masuk ke akun Anda'), findsOneWidget);
+    expect(find.byKey(const Key('login_email')), findsOneWidget);
+    expect(find.byKey(const Key('login_password')), findsOneWidget);
+    expect(find.text('Server API'), findsOneWidget);
+    expect(find.text('Pratinjau UI'), findsOneWidget);
+    expect(tester.takeException(), isNull);
+
+    await tester.tap(find.text('Pratinjau UI'));
+    await tester.pumpAndSettle();
+    expect(find.text('Mode ini khusus pratinjau visual tanpa backend.'), findsOneWidget);
+    expect(tester.takeException(), isNull);
+  });
+
+  testWidgets('login narrow viewport 320px tidak overflow', (tester) async {
+    tester.view.physicalSize = const Size(320, 640);
+    tester.view.devicePixelRatio = 1;
+    addTearDown(tester.view.resetPhysicalSize);
+    addTearDown(tester.view.resetDevicePixelRatio);
+
+    await tester.pumpWidget(const NadiApp());
+    await tester.pumpAndSettle();
+    expect(find.byKey(const Key('login_email')), findsOneWidget);
+    expect(find.byKey(const Key('login_password')), findsOneWidget);
+    expect(tester.takeException(), isNull);
+  });
 }
