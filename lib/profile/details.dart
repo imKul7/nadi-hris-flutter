@@ -27,11 +27,22 @@ Future<void> showProfileSheet(
           mainAxisSize: MainAxisSize.min,
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
-            Text(title, style: const TextStyle(
-              color: profileNavy,
-              fontSize: 21,
-              fontWeight: FontWeight.w800,
-            )),
+            Row(
+              children: [
+                Expanded(
+                  child: Text(title, style: const TextStyle(
+                    color: profileNavy,
+                    fontSize: 21,
+                    fontWeight: FontWeight.w800,
+                  )),
+                ),
+                IconButton(
+                  tooltip: 'Tutup',
+                  icon: const Icon(Icons.close_rounded),
+                  onPressed: () => Navigator.of(sheetContext).pop(),
+                ),
+              ],
+            ),
             const SizedBox(height: 18),
             ...children,
           ],
