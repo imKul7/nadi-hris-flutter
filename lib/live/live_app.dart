@@ -1,6 +1,8 @@
 import 'package:flutter/material.dart';
 import 'package:geolocator/geolocator.dart';
 import 'api.dart';
+import '../profile/photo.dart';
+import '../profile/details.dart';
 
 class _C {
   static const navy=Color(0xFF12283F);
@@ -493,20 +495,290 @@ class _Audit extends StatelessWidget {final LiveSession session;const _Audit({re
               _UI.text('${r['entity']} • ${r['created_at']}',size:10,color:_C.grey)]))])))),
       ]); }));
 }
-class _Profile extends StatelessWidget{
-  final LiveSession session;final VoidCallback onLogout;
-  const _Profile({required this.session,required this.onLogout});
-  @override Widget build(BuildContext context)=>_Page(title:'Profil',caption:'Identitas dan akses akun Anda',children:[
-    _UI.panel(Row(children:[CircleAvatar(radius:32,backgroundColor:const Color(0xFFDFE9FB),
-      child:_UI.title(session.name.substring(0,1),size:23)),const SizedBox(width:15),
-      Expanded(child:Column(crossAxisAlignment:CrossAxisAlignment.start,children:[_UI.title(session.name,size:16),
-        _UI.text('${_roleName(session.role)} · ${session.department}',size:12,color:_C.grey),
-        const SizedBox(height:7),_UI.chip(session.user['employee_id'].toString())]))])),
-    const SizedBox(height:24),_UI.title('Pengaturan akun',size:17),const SizedBox(height:12),
-    _Action(Icons.person_outline,'Data pribadi',session.user['email'].toString(),()=>_UI.toast(context,'Data sesuai database NADI.')),
-    const SizedBox(height:10),_Action(Icons.security_outlined,'Keamanan sesi','Token kedaluwarsa otomatis setelah 12 jam',
-      ()=>_UI.toast(context,'Sesi API terenkripsi saat menggunakan HTTPS. Untuk LAN demo gunakan jaringan tepercaya.')),
-    const SizedBox(height:10),_Action(Icons.help_outline,'Bantuan & dukungan','Panduan tersedia di README repository',()=>_UI.toast(context,'NADI HRIS — Kelompok 6')),
-    const SizedBox(height:26),_UI.bigButton('Keluar',onLogout,icon:Icons.logout,bg:_C.navy),
-  ]);
+class _Profile extends StatefulWidget {
+  final LiveSession session;
+  final VoidCallback onLogout;
+  const _Profile({required this.session, required this.onLogout});
+
+  @override
+  State<_Profile> createState() => _ProfileState();
+}
+
+class _ProfileState extends State<_Profile> {
+  bool savingPhoto = false;
+
+  Future<void> _saveAvatar(String? avatar) async {
+    if (savingPhoto) return;
+    setState(() => savingPhoto = true);
+    try {
+      final result = await widget.session.api.call(
+        'PATCH',
+        '/api/me/avatar',
+        token: widget.session.token,
+        body: {'avatar_data': avatar},
+      );
+      if (!mounted) return;
+      widget.session.user
+        ..clear()
+        ..addAll((result['user'] as Map).cast<String, dynamic>());
+      setState(() {});
+      _UI.toast(context, avatar == null
+          ? 'Foto profil berhasil dihapus.'
+          : 'Foto profil tersimpan di database NADI.');
+    } catch (error) {
+      if (mounted) _UI.toast(context, error.toString());
+    } finally {
+      if (mounted) setState(() => savingPhoto = false);
+    }
+  }
+
+  Future<void> _pickAvatar() async {
+    if (savingPhoto) return;
+    try {
+      final photo = await chooseProfilePhoto();
+      if (photo != null && mounted) await _saveAvatar(photo);
+    } catch (error) {
+      if (mounted) _UI.toast(context, error.toString());
+    }
+  }
+
+  void _showPersonal() {
+    final user = widget.session.user;
+    showProfileSheet(context, title: 'Data pribadi', children: [
+      ProfileDetailRow(label: 'Nama lengkap', value: widget.session.name),
+      ProfileDetailRow(label: 'ID karyawan', value: (user['employee_id'] ?? '-').toString()),
+      ProfileDetailRow(label: 'Email', value: (user['email'] ?? '-').toString()),
+      ProfileDetailRow(label: 'Role', value: _roleName(widget.session.role)),
+      ProfileDetailRow(label: 'Departemen', value: widget.session.department),
+      const Text(
+        'Informasi diambil dari database NADI. Perubahan identitas dilakukan oleh HRD.',
+        style: TextStyle(color: _C.grey, fontSize: 12),
+      ),
+    ]);
+  }
+
+  void _showPreferences() {
+    showProfileSheet(context, title: 'Preferensi profil', children: [
+      StatefulBuilder(
+        builder: (sheetContext, updateSheet) => Column(
+          children: [
+            SwitchListTile.adaptive(
+              contentPadding: EdgeInsets.zero,
+              title: const Text('Tampilkan ID karyawan'),
+              subtitle: const Text('Tampilkan ID pada kartu profil'),
+              value: widget.session.showEmployeeId,
+              onChanged: (v) {
+                widget.session.showEmployeeId = v;
+                updateSheet(() {});
+                setState(() {});
+              },
+            ),
+            SwitchListTile.adaptive(
+              contentPadding: EdgeInsets.zero,
+              title: const Text('Tampilkan departemen'),
+              subtitle: const Text('Tampilkan departemen di kartu profil'),
+              value: widget.session.showDepartment,
+              onChanged: (v) {
+                widget.session.showDepartment = v;
+                updateSheet(() {});
+                setState(() {});
+              },
+            ),
+          ],
+        ),
+      ),
+      const SizedBox(height: 12),
+      const Text(
+        'Preferensi tampilan berlaku selama sesi login ini. Foto profil disimpan terpisah di database.',
+        style: TextStyle(color: _C.grey, fontSize: 12),
+      ),
+    ]);
+  }
+
+  Future<void> _showPasswordChange() async {
+    final currentPassword = TextEditingController();
+    final newPassword = TextEditingController();
+    bool saving = false;
+    try {
+      await showProfileSheet(context, title: 'Ubah kata sandi', children: [
+        StatefulBuilder(
+          builder: (sheetContext, updateSheet) => Column(
+            crossAxisAlignment: CrossAxisAlignment.stretch,
+            children: [
+              TextField(
+                key: const Key('live_current_password'),
+                controller: currentPassword,
+                obscureText: true,
+                decoration: const InputDecoration(
+                  labelText: 'Kata sandi saat ini',
+                  prefixIcon: Icon(Icons.lock_outline),
+                ),
+              ),
+              const SizedBox(height: 13),
+              TextField(
+                key: const Key('live_new_password'),
+                controller: newPassword,
+                obscureText: true,
+                decoration: const InputDecoration(
+                  labelText: 'Kata sandi baru (minimal 10 karakter)',
+                  prefixIcon: Icon(Icons.shield_outlined),
+                ),
+              ),
+              const SizedBox(height: 16),
+              _UI.bigButton(
+                saving ? 'Menyimpan...' : 'Simpan kata sandi',
+                saving ? null : () async {
+                  if (currentPassword.text.isEmpty || newPassword.text.length < 10) {
+                    _UI.toast(sheetContext, 'Isi password lama dan password baru minimal 10 karakter.');
+                    return;
+                  }
+                  updateSheet(() => saving = true);
+                  try {
+                    await widget.session.api.call(
+                      'POST',
+                      '/api/me/password',
+                      token: widget.session.token,
+                      body: {
+                        'current_password': currentPassword.text,
+                        'new_password': newPassword.text,
+                      },
+                    );
+                    if (sheetContext.mounted) {
+                      Navigator.of(sheetContext).pop();
+                    }
+                    if (mounted) _UI.toast(context, 'Kata sandi berhasil diganti.');
+                  } catch (error) {
+                    if (sheetContext.mounted) _UI.toast(sheetContext, error.toString());
+                  } finally {
+                    if (sheetContext.mounted) updateSheet(() => saving = false);
+                  }
+                },
+                icon: Icons.check_circle_outline,
+              ),
+              const SizedBox(height: 10),
+              const Text(
+                'Setelah diganti, sesi di perangkat lain dinonaktifkan. Jangan bagikan kata sandi.',
+                style: TextStyle(color: _C.grey, fontSize: 12),
+              ),
+            ],
+          ),
+        ),
+      ]);
+    } finally {
+      currentPassword.dispose();
+      newPassword.dispose();
+    }
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    final session = widget.session;
+    final data = session.user['avatar_data'] as String?;
+    return _Page(
+      title: 'Profil',
+      caption: 'Identitas dan akses akun Anda',
+      children: [
+        _UI.panel(
+          Row(children: [
+            Stack(
+              clipBehavior: Clip.none,
+              children: [
+                profileAvatar(name: session.name, data: data, radius: 36),
+                Positioned(
+                  bottom: -4,
+                  right: -4,
+                  child: Material(
+                    color: _C.blue,
+                    shape: const CircleBorder(),
+                    child: IconButton(
+                      key: const Key('live_avatar_edit'),
+                      tooltip: 'Tambah atau ganti foto profil',
+                      onPressed: savingPhoto ? null : _pickAvatar,
+                      icon: const Icon(Icons.camera_alt_outlined, color: Colors.white, size: 17),
+                      constraints: const BoxConstraints(minWidth: 34, minHeight: 34),
+                    ),
+                  ),
+                ),
+              ],
+            ),
+            const SizedBox(width: 15),
+            Expanded(child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                _UI.title(session.name, size: 16),
+                if (session.showDepartment)
+                  _UI.text(
+                    _roleName(session.role) + ' · ' + session.department,
+                    size: 12,
+                    color: _C.grey,
+                  )
+                else
+                  _UI.text(_roleName(session.role), size: 12, color: _C.grey),
+                if (session.showEmployeeId) ...[
+                  const SizedBox(height: 7),
+                  _UI.chip((session.user['employee_id'] ?? '-').toString()),
+                ],
+                const SizedBox(height: 6),
+                _UI.text('Foto profil opsional', size: 11, color: _C.blue),
+              ],
+            )),
+          ]),
+        ),
+        if (savingPhoto) ...[
+          const SizedBox(height: 9),
+          const Center(child: CircularProgressIndicator()),
+        ],
+        if (data != null) ...[
+          const SizedBox(height: 5),
+          TextButton.icon(
+            key: const Key('live_avatar_remove'),
+            onPressed: savingPhoto ? null : () => _saveAvatar(null),
+            icon: const Icon(Icons.delete_outline, size: 18),
+            label: const Text('Hapus foto profil'),
+          ),
+        ],
+        const SizedBox(height: 24),
+        _UI.title('Pengaturan akun', size: 17),
+        const SizedBox(height: 12),
+        _Action(
+          Icons.person_outline,
+          'Data pribadi',
+          'Informasi dari database NADI',
+          _showPersonal,
+        ),
+        const SizedBox(height: 10),
+        _Action(
+          Icons.security_outlined,
+          'Keamanan akun',
+          'Ubah kata sandi akun',
+          _showPasswordChange,
+        ),
+        const SizedBox(height: 10),
+        _Action(
+          Icons.tune_outlined,
+          'Preferensi',
+          'Tampilan informasi profil',
+          _showPreferences,
+        ),
+        const SizedBox(height: 10),
+        _Action(
+          Icons.help_outline,
+          'Bantuan & dukungan',
+          'Panduan penggunaan fitur',
+          () => showProfileSheet(
+            context,
+            title: 'Bantuan & dukungan',
+            children: [profileHelpContent()],
+          ),
+        ),
+        const SizedBox(height: 26),
+        _UI.bigButton(
+          'Keluar',
+          widget.onLogout,
+          icon: Icons.logout,
+          bg: _C.navy,
+        ),
+      ],
+    );
+  }
 }
