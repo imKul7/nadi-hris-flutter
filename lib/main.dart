@@ -365,13 +365,15 @@ class _LoginScreenState extends State<LoginScreen> {
   }
 
   Widget _brandHero({required bool desktop}) {
+    // The headline wraps to more lines on 320px phones; allow additional room.
+    final narrowPhone = MediaQuery.sizeOf(context).width < 360;
     return ClipRRect(
       borderRadius: BorderRadius.only(
         topLeft: Radius.circular(desktop ? 28 : 0),
         topRight: Radius.circular(desktop ? 28 : 0),
       ),
       child: SizedBox(
-        height: desktop ? 265 : 268,
+        height: desktop ? 265 : (narrowPhone ? 322 : 288),
         child: DecoratedBox(
           decoration: const BoxDecoration(
             gradient: LinearGradient(
