@@ -8,9 +8,11 @@ Base URL local: `http://localhost:3000`. Endpoint mengembalikan JSON dan `Cache-
 |---|---|---|---|
 | POST | `/api/login` | Publik | `{ "email": "raka@nadi.test", "password": "..." }` |
 | GET | `/api/me` | Login | – |
+| PATCH | `/api/me/avatar` | Login | `{ "avatar_data": "data:image/png;base64,..." }` atau `{ "avatar_data": null }` untuk menghapus foto |
+| POST | `/api/me/password` | Login | `{ "current_password": "...", "new_password": "..." }` minimal 10 karakter |
 | POST | `/api/logout` | Login | – |
 
-Request setelah login memakai `Authorization: Bearer <token>`. Token tidak dikirim di query string.
+Request setelah login memakai `Authorization: Bearer <token>`. Token tidak dikirim di query string. Foto profil opsional dibatasi **JPEG/PNG maksimal 150 KB**, diverifikasi di server (header berkas dan base64), dan disimpan sebagai data pengguna pada SQLite. Ganti password akan mengakhiri sesi pengguna di perangkat lain tetapi mempertahankan sesi yang sedang dipakai. Endpoint foto dan password hanya boleh diakses pemilik token. Fitur ini untuk prototipe lokal, bukan penyimpanan foto perusahaan siap produksi.
 
 ## Presensi / Geofencing
 
