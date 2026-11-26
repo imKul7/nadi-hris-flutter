@@ -1,5 +1,7 @@
 import 'live/api.dart';
 import 'live/live_app.dart';
+import 'profile/photo.dart';
+import 'profile/details.dart';
 import 'package:flutter/material.dart';
 
 void main() => runApp(const NadiApp());
@@ -43,6 +45,18 @@ class DemoStore extends ChangeNotifier {
   int tab = 0;
   bool loggedIn = false;
   bool simulatedCheckIn = false;
+  String? avatarData;
+  bool showEmployeeId = true;
+
+  void updateAvatar(String? photo) {
+    avatarData = photo;
+    notifyListeners();
+  }
+
+  void updateShowEmployeeId(bool next) {
+    showEmployeeId = next;
+    notifyListeners();
+  }
   final List<NadiRequest> requests = [
     NadiRequest(
         'Cuti tahunan', '28–29 Okt · 2 hari', 'Menunggu', 'Keperluan keluarga'),
@@ -1893,63 +1907,192 @@ class HrdDashboard extends StatelessWidget {
 class ProfileScreen extends StatelessWidget {
   final DemoStore store;
   const ProfileScreen({super.key, required this.store});
+
+  Future<void> _editPhoto(BuildContext context) async {
+    try {
+      final selected = await chooseProfilePhoto();
+      if (selected != null) {
+        store.updateAvatar(selected);
+        if (context.mounted) {
+          UI.notice(context, 'Foto profil pratinjau berhasil diganti.');
+        }
+      }
+    } catch (error) {
+      if (context.mounted) {
+        UI.notice(context, error.toString());
+      }
+    }
+  }
+
+  void _showPersonalData(BuildContext context) {
+    showProfileSheet(context, title: 'Data pribadi', children: [
+      const ProfileDetailRow(label: 'Nama', value: 'Raka Pratama'),
+      const ProfileDetailRow(label: 'ID karyawan', value: 'EMP-00042'),
+      const ProfileDetailRow(label: 'Email demo', value: 'raka@nadi.test'),
+      ProfileDetailRow(label: 'Role pratinjau', value: store.role.label),
+      const ProfileDetailRow(
+        label: 'Departemen',
+        value: 'Quality Control (data simulasi)',
+      ),
+      const Text(
+        'Informasi di mode ini adalah contoh. Data aktual tersedia setelah login Server API.',
+        style: TextStyle(color: NadiColors.muted, fontSize: 12),
+      ),
+    ]);
+  }
+
+  void _showPreferences(BuildContext context) {
+    showProfileSheet(context, title: 'Preferensi tampilan', children: [
+      StatefulBuilder(
+        builder: (context, updateSheet) => SwitchListTile.adaptive(
+          key: const Key('demo_show_employee_id'),
+          contentPadding: EdgeInsets.zero,
+          title: const Text('Tampilkan ID karyawan'),
+          subtitle: const Text('Atur apakah ID muncul pada kartu profil'),
+          activeTrackColor: NadiColors.royal,
+          value: store.showEmployeeId,
+          onChanged: (next) {
+            store.updateShowEmployeeId(next);
+            updateSheet(() {});
+          },
+        ),
+      ),
+      const SizedBox(height: 8),
+      const Text(
+        'Preferensi di Pratinjau UI berlaku selama sesi demo berjalan, tidak tersimpan di database.',
+        style: TextStyle(color: NadiColors.muted, fontSize: 12),
+      ),
+    ]);
+  }
+
   @override
   Widget build(BuildContext context) => PageBody(
-          title: 'Profil',
-          subtitle: 'Informasi akun & preferensi Anda',
-          children: [
-            UI.card(
-                child: Row(children: [
-              const CircleAvatar(
-                  radius: 38,
-                  backgroundColor: Color(0xFFDFE9FB),
-                  child: Text('RP',
-                      style: TextStyle(
-                          color: NadiColors.royal,
-                          fontWeight: FontWeight.bold))),
-              const SizedBox(width: 15),
-              Expanded(
+        title: 'Profil',
+        subtitle: 'Informasi akun & preferensi Anda',
+        children: [
+          UI.card(
+            child: Row(
+              children: [
+                Stack(
+                  clipBehavior: Clip.none,
+                  children: [
+                    profileAvatar(name: 'Raka Pratama', data: store.avatarData),
+                    Positioned(
+                      bottom: -3,
+                      right: -3,
+                      child: Material(
+                        color: NadiColors.royal,
+                        shape: const CircleBorder(),
+                        child: IconButton(
+                          key: const Key('demo_avatar_edit'),
+                          tooltip: 'Tambah atau ganti foto profil',
+                          icon: const Icon(
+                            Icons.camera_alt_outlined,
+                            size: 16,
+                            color: Colors.white,
+                          ),
+                          constraints: const BoxConstraints(
+                            minWidth: 34,
+                            minHeight: 34,
+                          ),
+                          onPressed: () => _editPhoto(context),
+                        ),
+                      ),
+                    ),
+                  ],
+                ),
+                const SizedBox(width: 15),
+                Expanded(
                   child: Column(
-                      crossAxisAlignment: CrossAxisAlignment.start,
-                      children: [
-                    UI.heading('Raka Pratama', size: 17),
-                    UI.caption('Karyawan · Quality Control', size: 11),
-                    UI.gap(9),
-                    UI.pill('ID: EMP-00042')
-                  ]))
-            ])),
-            UI.gap(28),
-            UI.heading('Pengaturan akun', size: 17),
-            UI.gap(13),
-            ActionTile(
-                icon: Icons.person_outline,
-                title: 'Data pribadi',
-                subtitle: 'Informasi karyawan',
-                onTap: () => UI.notice(
-                    context, 'Halaman detail akun belum tersambung backend.')),
-            UI.gap(10),
-            ActionTile(
-                icon: Icons.shield_outlined,
-                title: 'Keamanan akun',
-                subtitle: 'Kata sandi dan akses',
-                onTap: () => UI.notice(
-                    context, 'Manajemen kata sandi memerlukan backend.')),
-            UI.gap(10),
-            ActionTile(
-                icon: Icons.tune_outlined,
-                title: 'Preferensi',
-                subtitle: 'Notifikasi dan tampilan',
-                onTap: () =>
-                    UI.notice(context, 'Preferensi belum disimpan permanen.')),
-            UI.gap(10),
-            ActionTile(
-                icon: Icons.article_outlined,
-                title: 'Bantuan & dukungan',
-                subtitle: 'Panduan penggunaan',
-                onTap: () => UI.notice(
-                    context, 'NADI HRIS — prototype frontend Pertemuan 8.')),
-            UI.gap(24),
-            UI.primary('Keluar dari simulasi', store.logout,
-                icon: Icons.logout, color: NadiColors.navy),
-          ]);
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      UI.heading('Raka Pratama', size: 17),
+                      UI.caption(store.role.label + ' · Quality Control', size: 11),
+                      if (store.showEmployeeId) ...[
+                        UI.gap(9),
+                        UI.pill('ID: EMP-00042'),
+                      ],
+                      const SizedBox(height: 7),
+                      const Text(
+                        'Foto profil opsional',
+                        style: TextStyle(
+                          color: NadiColors.royal,
+                          fontSize: 11,
+                          fontWeight: FontWeight.w600,
+                        ),
+                      ),
+                    ],
+                  ),
+                ),
+              ],
+            ),
+          ),
+          UI.gap(10),
+          if (store.avatarData != null)
+            TextButton.icon(
+              key: const Key('demo_avatar_remove'),
+              onPressed: () => store.updateAvatar(null),
+              icon: const Icon(Icons.delete_outline, size: 18),
+              label: const Text('Hapus foto profil'),
+            ),
+          const Text(
+            'Di Pratinjau UI, foto hanya tersimpan selama aplikasi berjalan.',
+            style: TextStyle(color: NadiColors.muted, fontSize: 11),
+          ),
+          UI.gap(26),
+          UI.heading('Pengaturan akun', size: 17),
+          UI.gap(13),
+          ActionTile(
+            icon: Icons.person_outline,
+            title: 'Data pribadi',
+            subtitle: 'Lihat informasi akun dan role',
+            onTap: () => _showPersonalData(context),
+          ),
+          UI.gap(10),
+          ActionTile(
+            icon: Icons.shield_outlined,
+            title: 'Keamanan akun',
+            subtitle: 'Informasi keamanan akses',
+            onTap: () => showProfileSheet(
+              context,
+              title: 'Keamanan akun',
+              children: const [
+                ProfileDetailRow(
+                  label: 'Mode pratinjau',
+                  value: 'Tidak ada autentikasi server atau password yang tersimpan.',
+                ),
+                ProfileDetailRow(
+                  label: 'Ubah kata sandi',
+                  value: 'Gunakan mode Server API dan login dengan akun yang valid untuk mengganti kata sandi.',
+                ),
+              ],
+            ),
+          ),
+          UI.gap(10),
+          ActionTile(
+            icon: Icons.tune_outlined,
+            title: 'Preferensi',
+            subtitle: 'Personalisasi tampilan profil',
+            onTap: () => _showPreferences(context),
+          ),
+          UI.gap(10),
+          ActionTile(
+            icon: Icons.article_outlined,
+            title: 'Bantuan & dukungan',
+            subtitle: 'Panduan singkat menggunakan NADI HRIS',
+            onTap: () => showProfileSheet(
+              context,
+              title: 'Bantuan & dukungan',
+              children: [profileHelpContent()],
+            ),
+          ),
+          UI.gap(24),
+          UI.primary(
+            'Keluar dari simulasi',
+            store.logout,
+            icon: Icons.logout,
+            color: NadiColors.navy,
+          ),
+        ],
+      );
 }
