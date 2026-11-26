@@ -20,7 +20,7 @@
 
 **NADI HRIS** adalah implementasi proyek kelompok Workforce Time & Attendance. Desain antarmuka mengacu pada **sembilan layar orisinal Pertemuan 6** (frame 390×844, navy `#12283F`, royal blue `#245BE8`, red `#E34E54`, background `#F6F8FC`). Aplikasi dibuat memakai **widget Flutter**; desain SVG tidak digunakan sebagai pengganti UI.
 
-> **Status verifikasi:** REST API dan skenario backend dapat dijalankan secara lokal, dengan **8/8 test API lulus** pada lingkungan pembuat paket. **Flutter analyze / flutter test / build APK belum dapat dijalankan di lingkungan pembuat paket** karena Flutter SDK tidak tersedia. GitHub repository `imKul7/nadi-hris-flutter` **belum dibuat/dipublikasikan** saat paket ini dibuat; badge GitHub di atas akan aktif setelah publikasi dan workflow berhasil.
+> **Status terverifikasi — 26 November 2026:** Source Flutter sudah diuji di laptop Windows dengan **Flutter 3.47.0**: `flutter analyze` → *No issues found!* dan `flutter test` → **2/2 PASS**, setelah perbaikan layout dan widget test. Workflow **Flutter CI** dan **API Tests** sama-sama PASS pada Pull Request #1; workflow Flutter dikunci ke Flutter 3.47.0 agar sesuai lingkungan lokal. Backend API **8/8 PASS** pada pengujian yang dilaporkan saat paket dibuat. **Pengujian visual sembilan layar pada perangkat, integrasi Flutter–API secara menyeluruh, dan APK Android belum dinyatakan PASS.** Repository publik: [imKul7/nadi-hris-flutter](https://github.com/imKul7/nadi-hris-flutter).
 
 ![Sembilan desain acuan Pertemuan 6, bukan hasil tangkapan layar runtime](docs/design_reference_grid.png)
 
@@ -140,7 +140,7 @@ Backend saat ini menggunakan **Node.js + SQLite bawaan Node 22** agar seluruh AP
 
 Akun pengembang: [@imKul7](https://github.com/imKul7).
 
-**Repo belum dipublikasikan melalui asisten** karena integrasi GitHub yang tersedia tidak menyediakan fungsi *create repository*. Source disiapkan lengkap beserta test dan workflow. Jalankan `scripts/publish_github.ps1` setelah autentikasi GitHub CLI dan tinjau apakah repository publik sesuai keinginan Anda. Gunakan screenshot **runtime Flutter asli** untuk `docs/screenshots/` setelah aplikasi berhasil berjalan, jangan mengklaim desain SVG sebagai screenshot aplikasi.
+**Repository publik sudah tersedia:** [github.com/imKul7/nadi-hris-flutter](https://github.com/imKul7/nadi-hris-flutter), branch `main`. Workflow [Flutter CI](https://github.com/imKul7/nadi-hris-flutter/actions/workflows/flutter-ci.yml) menjalankan analyzer dan widget test memakai Flutter 3.47.0; workflow [API Tests](https://github.com/imKul7/nadi-hris-flutter/actions/workflows/api-ci.yml) memeriksa backend Node.js. Perubahan dilakukan lewat branch dan pull request, lalu digabungkan sesudah checks PASS. **Jangan menjalankan ulang script publikasi** untuk repo yang sudah ada. Tambahkan screenshot **runtime Flutter asli** ke `docs/screenshots/` sesudah QA visual—sembilan SVG yang ada adalah desain acuan, bukan bukti tampilan aplikasi berjalan.
 
 ## Kelompok 6
 
