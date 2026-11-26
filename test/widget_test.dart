@@ -93,7 +93,7 @@ void main() {
 
     await tester.tap(find.text('Data pribadi'));
     await tester.pumpAndSettle();
-    expect(find.text('EMP-00042'), findsOneWidget);
+    expect(find.text('EMP-00042', findRichText: true), findsOneWidget);
     await tester.tap(find.byTooltip('Tutup'));
     await tester.pumpAndSettle();
 
@@ -108,7 +108,7 @@ void main() {
 
     await tester.tap(find.text('Bantuan & dukungan'));
     await tester.pumpAndSettle();
-    expect(find.text('Foto profil'), findsOneWidget);
+    expect(find.text('FOTO PROFIL'), findsOneWidget);
     expect(tester.takeException(), isNull);
   });
 }
