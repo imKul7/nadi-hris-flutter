@@ -2007,7 +2007,7 @@ class ProfileScreen extends StatelessWidget {
                     crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
                       UI.heading('Raka Pratama', size: 17),
-                      UI.caption(store.role.label + ' · Quality Control', size: 11),
+                      UI.caption('${store.role.label} · Quality Control', size: 11),
                       if (store.showEmployeeId) ...[
                         UI.gap(9),
                         UI.pill('ID: EMP-00042'),
