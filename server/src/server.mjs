@@ -72,7 +72,7 @@ function originAllowed(origin){
   if(!isProd && /^http:\/\/(localhost|127\.0\.0\.1)(:\d+)?$/.test(origin))return origin;
   return null;
 }
-const queryUser = db => id => db.prepare(`SELECT u.id,u.employee_id,u.name,u.email,u.role,u.department_id,d.name department_name
+const queryUser = db => id => db.prepare(`SELECT u.id,u.employee_id,u.name,u.email,u.role,u.department_id,u.avatar_data,d.name department_name
     FROM users u LEFT JOIN departments d ON d.id=u.department_id WHERE u.id=?`).get(id);
 export function makeHandler(db){
   const getUser=queryUser(db);
