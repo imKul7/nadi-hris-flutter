@@ -1,0 +1,36 @@
+# Flutter / Dart
+.dart_tool/
+.packages
+.pub-cache/
+.pub/
+build/
+.flutter-plugins
+.flutter-plugins-dependencies
+# Android
+android/local.properties
+android/.gradle/
+android/.kotlin/
+*.jks
+*.keystore
+key.properties
+# Editor
+.idea/
+.vscode/
+*.iml
+.DS_Store
+# Secrets
+.env
+secrets.properties
+
+# NADI local API
+server/data/
+server/.env
+**/*.sqlite
+**/*.sqlite-shm
+**/*.sqlite-wal
+node_modules/
+# Misc private configs
+*.p12
+*.pfx
+*.pem
+*.key

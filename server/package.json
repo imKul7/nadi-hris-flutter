@@ -1,0 +1,9 @@
+{
+  "name": "nadi-hris-local-api",
+  "version": "1.0.0",
+  "private": true,
+  "description": "NADI HRIS functional local API with SQLite for course demonstration",
+  "type": "module",
+  "engines": { "node": ">=22.13.0" },
+  "scripts": { "start": "node src/server.mjs", "dev": "node --watch src/server.mjs", "test": "node --test test/*.test.mjs", "check": "node --check src/server.mjs && node --check src/database.mjs" }
+}
