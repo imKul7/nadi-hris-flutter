@@ -33,7 +33,8 @@ Future<String?> chooseProfilePhoto() async {
   if (!png && !jpeg) {
     throw const FormatException('Gunakan foto JPG atau PNG.');
   }
-  return 'data:image/' + (png ? 'png' : 'jpeg') + ';base64,' + base64Encode(bytes);
+  final format = png ? 'png' : 'jpeg';
+  return 'data:image/$format;base64,${base64Encode(bytes)}';
 }
 
 Uint8List? profilePhotoBytes(String? data) {
