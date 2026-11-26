@@ -9,7 +9,7 @@ const isProd = process.env.NODE_ENV === 'production';
 export const jakartaDate = (d=new Date()) => new Intl.DateTimeFormat('en-CA',{timeZone:'Asia/Jakarta',year:'numeric',month:'2-digit',day:'2-digit'}).format(d);
 const datePattern = /^\d{4}-\d{2}-\d{2}$/;
 const emailPattern = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
-const safeUser = u => u && ({id:u.id,employee_id:u.employee_id,name:u.name,email:u.email,role:u.role,department_id:u.department_id,department_name:u.department_name||null});
+const safeUser = u => u && ({id:u.id,employee_id:u.employee_id,name:u.name,email:u.email,role:u.role,department_id:u.department_id,department_name:u.department_name||null,avatar_data:u.avatar_data||null});
 const err = (status, message) => Object.assign(new Error(message), {status});
 const validDate = v => {
   if(typeof v!=='string'||!datePattern.test(v))return false;
@@ -111,6 +111,39 @@ export function makeHandler(db){
         return reply(res,200,{ok:true},origin);
       }
       if(path==='/api/me'&&method==='GET')return reply(res,200,{user:safeUser(getUser(u.id))},origin);
+      if(path==='/api/me/avatar'&&method==='PATCH'){
+        const b=await bodyJson(req);
+        if(!Object.hasOwn(b,'avatar_data'))throw err(422,'Foto profil wajib diberikan atau dihapus dengan null');
+        let data=null;
+        if(b.avatar_data!==null){
+          if(typeof b.avatar_data!=='string'||b.avatar_data.length>210_000)throw err(422,'Ukuran foto profil terlalu besar');
+          const m=/^data:image\/(png|jpeg);base64,([A-Za-z0-9+/]+={0,2})$/.exec(b.avatar_data);
+          if(!m||m[2].length%4!==0)throw err(422,'Foto profil harus PNG atau JPEG');
+          const bytes=Buffer.from(m[2],'base64');
+          if(bytes.length===0||bytes.length>150_000||bytes.toString('base64')!==m[2])throw err(422,'Foto profil maksimal 150 KB');
+          const validPng=bytes.length>=8&&bytes.subarray(0,8).equals(Buffer.from([137,80,78,71,13,10,26,10]));
+          const validJpg=bytes.length>=3&&bytes[0]===255&&bytes[1]===216&&bytes[2]===255;
+          if((m[1]==='png'&&!validPng)||(m[1]==='jpeg'&&!validJpg))throw err(422,'Isi file foto tidak sesuai format');
+          data=b.avatar_data;
+        }
+        db.prepare('UPDATE users SET avatar_data=? WHERE id=?').run(data,u.id);
+        audit(db,u.id,data?'update_avatar':'delete_avatar','user',u.id);
+        return reply(res,200,{user:safeUser(getUser(u.id))},origin);
+      }
+      if(path==='/api/me/password'&&method==='POST'){
+        const b=await bodyJson(req);
+        if(!validateStr(b.current_password,1,200)||!validateStr(b.new_password,10,120))
+          throw err(422,'Kata sandi lama dan kata sandi baru minimal 10 karakter wajib diisi');
+        const current=db.prepare('SELECT password_hash FROM users WHERE id=?').get(u.id);
+        if(!verifyPassword(b.current_password,current.password_hash))throw err(403,'Kata sandi lama tidak sesuai');
+        if(b.current_password===b.new_password)throw err(422,'Kata sandi baru harus berbeda');
+        db.prepare('UPDATE users SET password_hash=? WHERE id=?').run(hashPassword(b.new_password),u.id);
+        // Preserve the current session, invalidate other devices.
+        db.prepare('DELETE FROM sessions WHERE user_id=? AND token_hash<>?')
+          .run(u.id,hashToken(req.headers.authorization.slice(7)));
+        audit(db,u.id,'change_password','user',u.id);
+        return reply(res,200,{ok:true},origin);
+      }
       if(path==='/api/office'&&method==='GET')return reply(res,200,{office:office(db)},origin);
       if(path==='/api/office'&&method==='PATCH'){
         requireRole(u,['hrd']);const b=await bodyJson(req);
