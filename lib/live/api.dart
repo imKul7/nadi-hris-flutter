@@ -17,6 +17,8 @@ class LiveSession {
   String get role => (user['role'] ?? 'karyawan').toString();
   String get name => (user['name'] ?? 'Pengguna').toString();
   String get department => (user['department_name'] ?? '-').toString();
+  bool showEmployeeId = true;
+  bool showDepartment = true;
 }
 
 class NadiApi {
