@@ -8,7 +8,7 @@
 
   [![Flutter CI](https://github.com/imKul7/nadi-hris-flutter/actions/workflows/flutter-ci.yml/badge.svg)](https://github.com/imKul7/nadi-hris-flutter/actions/workflows/flutter-ci.yml)
   [![API Tests](https://github.com/imKul7/nadi-hris-flutter/actions/workflows/api-ci.yml/badge.svg)](https://github.com/imKul7/nadi-hris-flutter/actions/workflows/api-ci.yml)
-  ![Status](https://img.shields.io/badge/API-tests%208%2F8-11866B)
+  ![Status](https://img.shields.io/badge/API-tests%2010%2F10-11866B)
   ![Platform](https://img.shields.io/badge/Flutter-Android%20%7C%20Web-245BE8)
 
   <sub>Universitas Esa Unggul · Pemrograman Mobile · Kelompok 6 · 2026/2027</sub>
@@ -20,7 +20,7 @@
 
 **NADI HRIS** adalah implementasi proyek kelompok Workforce Time & Attendance. Desain antarmuka mengacu pada **sembilan layar orisinal Pertemuan 6** (frame 390×844, navy `#12283F`, royal blue `#245BE8`, red `#E34E54`, background `#F6F8FC`). Aplikasi dibuat memakai **widget Flutter**; desain SVG tidak digunakan sebagai pengganti UI.
 
-> **Status terverifikasi — 26 November 2026:** Source Flutter sudah diuji di laptop Windows dengan **Flutter 3.47.0**: `flutter analyze` → *No issues found!* dan `flutter test` → **2/2 PASS**, setelah perbaikan layout dan widget test. Workflow **Flutter CI** dan **API Tests** sama-sama PASS pada Pull Request #1; workflow Flutter dikunci ke Flutter 3.47.0 agar sesuai lingkungan lokal. Backend API **8/8 PASS** pada pengujian yang dilaporkan saat paket dibuat. **Pengujian visual sembilan layar pada perangkat, integrasi Flutter–API secara menyeluruh, dan APK Android belum dinyatakan PASS.** Repository publik: [imKul7/nadi-hris-flutter](https://github.com/imKul7/nadi-hris-flutter).
+> **Status terverifikasi — 26 November 2026:** GitHub Actions pada commit `dffe02e` (PR #4, merge ke `main`) lulus: **Flutter 3.47.0 — analyzer No issues found, 5/5 widget tests PASS; Node.js/SQLite — 10/10 API tests PASS**. Pengujian meliputi login, navigasi pengajuan, layout mobile, panel profil, endpoint foto, dan ganti password. **Build APK, pengujian visual seluruh layar pada perangkat, dan integrasi Flutter–API secara penuh belum dinyatakan PASS.** Source publik: [imKul7/nadi-hris-flutter](https://github.com/imKul7/nadi-hris-flutter).
 
 ![Sembilan desain acuan Pertemuan 6, bukan hasil tangkapan layar runtime](docs/design_reference_grid.png)
 
@@ -41,7 +41,7 @@
 6. Jadwal Kerja — shift yang ditetapkan HRD.
 7. Pusat Persetujuan — manajer, kepala departemen, dan review HRD untuk permohonan kepala departemen.
 8. Operasional HRD — staf, lokasi kantor, jadwal shift, audit aktivitas.
-9. Profil — informasi akun dan logout.
+9. Profil — identitas akun, foto profil opsional, pengaturan tampilan, bantuan, serta ubah kata sandi pada mode Server API.
 
 **Backend operasional lokal** (bukan simulasi frontend) memerlukan server Node 22.13+.
 
@@ -129,6 +129,16 @@ flowchart TD
 - **Pengajuan:** status awal karyawan `menunggu_manajer` → `menunggu_kepala` → `disetujui`; penolakan berhenti pada tahap reviewer. Alur khusus manajer/kepala tersedia, HRD sendiri belum dapat mengajukan karena belum ada pengawas HRD yang ditetapkan.
 - **Shift:** HRD dapat menetapkan shift kerja per tanggal dan pengguna.
 - **Audit:** aktivitas perubahan disimpan ke database dan dapat ditinjau HRD.
+
+## Foto profil dan pengaturan akun
+
+- **Pratinjau UI:** avatar opsional ditambahkan melalui ikon kamera pada Profil. Foto disimpan **sementara di memori**, hilang ketika aplikasi dihentikan.
+- **Server API:** pengguna dapat mengunggah, mengganti, dan menghapus foto profil JPEG/PNG maksimal **150 KB**. Foto disimpan di SQLite lokal sebagai data pengguna dan dapat dimuat kembali setelah login ulang. Database lama menggunakan migrasi penambahan kolom aman, tanpa reset data.
+- **Data pribadi:** identitas ditampilkan sebagai informasi baca-saja. **Keamanan:** password sendiri dapat diganti dengan memasukkan password lama dan password baru minimal 10 karakter. Sesi perangkat lain dicabut.
+- **Preferensi:** pilihan visibilitas ID karyawan dan departemen berlaku selama sesi berjalan. Belum disinkronkan lintas perangkat.
+- **Bantuan:** ringkasan penggunaan login, presensi, pengajuan, serta foto profil.
+- Setelah memperbarui repository, jalankan `flutter pub get` untuk memasang `image_picker` sebelum menjalankan aplikasi.
+- **Catatan:** prototipe akademik lokal; penyimpanan avatar ini bukan implementasi manajemen berkas perusahaan siap produksi.
 
 ## API dan database
 
