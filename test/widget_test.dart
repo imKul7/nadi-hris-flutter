@@ -106,6 +106,11 @@ void main() {
     await tester.pumpAndSettle();
     expect(find.text('ID: EMP-00042'), findsNothing);
 
+    await tester.scrollUntilVisible(
+      find.text('Bantuan & dukungan'),
+      180.0,
+      scrollable: find.byType(Scrollable).last,
+    );
     await tester.tap(find.text('Bantuan & dukungan'));
     await tester.pumpAndSettle();
     expect(find.text('FOTO PROFIL'), findsOneWidget);
