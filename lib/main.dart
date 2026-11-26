@@ -4,9 +4,8 @@ import 'package:flutter/material.dart';
 
 void main() => runApp(const NadiApp());
 
-// Pertemuan 8: Flutter frontend demo sesuai 9 frame SVG Pertemuan 6.
-// Semua nama, waktu, presensi, lokasi, dan status pada UI adalah data simulasi.
-// Tidak ada autentikasi, transaksi presensi, GPS, atau backend sungguhan.
+// NADI HRIS: pratinjau UI berbasis data demo dan mode terhubung ke API lokal.
+// Seluruh data di pratinjau merupakan simulasi, bukan transaksi backend.
 
 class NadiColors {
   static const navy = Color(0xFF12283F);
@@ -295,6 +294,10 @@ class _LoginScreenState extends State<LoginScreen> {
   bool submitting = false;
   NadiRole role = NadiRole.karyawan;
 
+  static const _fieldFill = Color(0xFFF8FAFE);
+  static const _fieldOutline = Color(0xFFCFDDF1);
+  static const _deepBlue = Color(0xFF0B3471);
+
   @override
   void dispose() {
     email.dispose();
@@ -302,201 +305,514 @@ class _LoginScreenState extends State<LoginScreen> {
     super.dispose();
   }
 
+  Future<void> _handleLogin() async {
+    if (submitting) {
+      return;
+    }
+    if (email.text.trim().isEmpty || password.text.trim().isEmpty) {
+      UI.notice(context, 'Isi email karyawan dan kata sandi.');
+      return;
+    }
+    if (!serverMode) {
+      widget.store.login(role);
+      return;
+    }
+
+    setState(() => submitting = true);
+    try {
+      final session = await NadiApi().login(email.text.trim(), password.text);
+      if (mounted) {
+        widget.onConnected(session);
+      }
+    } catch (error) {
+      if (mounted) {
+        UI.notice(context, error.toString());
+      }
+    } finally {
+      if (mounted) {
+        setState(() => submitting = false);
+      }
+    }
+  }
+
+  InputDecoration _inputDecoration(
+    String placeholder,
+    IconData leading, {
+    Widget? trailing,
+  }) {
+    return InputDecoration(
+      hintText: placeholder,
+      filled: true,
+      fillColor: _fieldFill,
+      prefixIcon: Icon(leading, size: 21, color: const Color(0xFF526783)),
+      suffixIcon: trailing,
+      contentPadding: const EdgeInsets.symmetric(
+        vertical: 17,
+        horizontal: 16,
+      ),
+      enabledBorder: OutlineInputBorder(
+        borderRadius: BorderRadius.circular(15),
+        borderSide: const BorderSide(color: _fieldOutline),
+      ),
+      focusedBorder: OutlineInputBorder(
+        borderRadius: BorderRadius.circular(15),
+        borderSide: const BorderSide(color: NadiColors.royal, width: 1.7),
+      ),
+      border: OutlineInputBorder(
+        borderRadius: BorderRadius.circular(15),
+      ),
+    );
+  }
+
+  Widget _brandHero({required bool desktop}) {
+    return ClipRRect(
+      borderRadius: BorderRadius.only(
+        topLeft: Radius.circular(desktop ? 28 : 0),
+        topRight: Radius.circular(desktop ? 28 : 0),
+      ),
+      child: SizedBox(
+        height: desktop ? 265 : 268,
+        child: DecoratedBox(
+          decoration: const BoxDecoration(
+            gradient: LinearGradient(
+              begin: Alignment.topLeft,
+              end: Alignment.bottomRight,
+              colors: [NadiColors.navy, Color(0xFF082E61), _deepBlue],
+            ),
+          ),
+          child: Stack(
+            clipBehavior: Clip.hardEdge,
+            children: [
+              Positioned(
+                width: 260,
+                height: 260,
+                right: -74,
+                top: -112,
+                child: DecoratedBox(
+                  decoration: BoxDecoration(
+                    shape: BoxShape.circle,
+                    border: Border.all(
+                      color: const Color(0x332E8DE7),
+                      width: 1,
+                    ),
+                    gradient: const LinearGradient(
+                      begin: Alignment.topLeft,
+                      end: Alignment.bottomRight,
+                      colors: [Color(0xFF185B99), Color(0xFF0B376B)],
+                    ),
+                  ),
+                ),
+              ),
+              Positioned(
+                width: 320,
+                height: 320,
+                right: -182,
+                bottom: -254,
+                child: const DecoratedBox(
+                  decoration: BoxDecoration(
+                    shape: BoxShape.circle,
+                    color: Color(0x442D78BB),
+                  ),
+                ),
+              ),
+              Positioned(
+                right: 20,
+                top: 76,
+                child: Transform.rotate(
+                  angle: -0.23,
+                  child: Container(
+                    width: 165,
+                    height: 66,
+                    decoration: BoxDecoration(
+                      borderRadius: BorderRadius.circular(90),
+                      color: const Color(0x121D9CFF),
+                    ),
+                  ),
+                ),
+              ),
+              Padding(
+                padding: const EdgeInsets.fromLTRB(27, 35, 27, 42),
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    const Row(
+                      mainAxisSize: MainAxisSize.min,
+                      children: [
+                        Text(
+                          'N',
+                          style: TextStyle(
+                            color: Colors.white,
+                            fontSize: 28,
+                            fontWeight: FontWeight.w900,
+                            letterSpacing: -1.2,
+                          ),
+                        ),
+                        SizedBox(width: 6),
+                        CircleAvatar(
+                          radius: 3,
+                          backgroundColor: NadiColors.red,
+                        ),
+                        SizedBox(width: 9),
+                        Text(
+                          'nadi',
+                          style: TextStyle(
+                            color: Colors.white,
+                            fontSize: 28,
+                            fontWeight: FontWeight.w800,
+                            letterSpacing: -0.7,
+                          ),
+                        ),
+                      ],
+                    ),
+                    const Spacer(),
+                    const Text(
+                      'Satu ritme.\nUntuk seluruh tim.',
+                      style: TextStyle(
+                        color: Colors.white,
+                        fontSize: 29,
+                        fontWeight: FontWeight.w800,
+                        letterSpacing: -0.6,
+                        height: 1.16,
+                      ),
+                    ),
+                    const SizedBox(height: 17),
+                    Container(
+                      width: 52,
+                      height: 4,
+                      decoration: BoxDecoration(
+                        borderRadius: BorderRadius.circular(12),
+                        gradient: const LinearGradient(
+                          colors: [Color(0xFF8FC7FF), NadiColors.royal],
+                        ),
+                      ),
+                    ),
+                  ],
+                ),
+              ),
+            ],
+          ),
+        ),
+      ),
+    );
+  }
+
+  Widget _modeOption(
+    String label,
+    IconData icon,
+    bool value,
+  ) {
+    final selected = serverMode == value;
+    return Expanded(
+      child: Semantics(
+        button: true,
+        selected: selected,
+        child: Material(
+          color: selected ? const Color(0xFFE5EDFF) : Colors.transparent,
+          borderRadius: BorderRadius.circular(15),
+          child: InkWell(
+            borderRadius: BorderRadius.circular(15),
+            onTap: submitting
+                ? null
+                : () => setState(() => serverMode = value),
+            child: Container(
+              height: 46,
+              padding: const EdgeInsets.symmetric(horizontal: 6),
+              decoration: BoxDecoration(
+                borderRadius: BorderRadius.circular(15),
+                border: selected
+                    ? Border.all(color: NadiColors.royal, width: 1.4)
+                    : null,
+              ),
+              child: Row(
+                mainAxisAlignment: MainAxisAlignment.center,
+                children: [
+                  Icon(
+                    selected ? Icons.check_circle_rounded : icon,
+                    size: 19,
+                    color: selected ? NadiColors.royal : NadiColors.muted,
+                  ),
+                  const SizedBox(width: 7),
+                  Flexible(
+                    child: Text(
+                      label,
+                      maxLines: 1,
+                      overflow: TextOverflow.ellipsis,
+                      style: TextStyle(
+                        fontSize: 12,
+                        fontWeight: selected ? FontWeight.w800 : FontWeight.w600,
+                        color: selected ? NadiColors.royal : NadiColors.navy,
+                      ),
+                    ),
+                  ),
+                ],
+              ),
+            ),
+          ),
+        ),
+      ),
+    );
+  }
+
+  Widget _loginCard() {
+    return Transform.translate(
+      offset: const Offset(0, -24),
+      child: Container(
+        width: double.infinity,
+        padding: const EdgeInsets.fromLTRB(25, 30, 25, 32),
+        decoration: BoxDecoration(
+          color: Colors.white,
+          borderRadius: BorderRadius.circular(29),
+          boxShadow: const [
+            BoxShadow(
+              color: Color(0x160F305C),
+              blurRadius: 34,
+              offset: Offset(0, 12),
+            ),
+          ],
+        ),
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            UI.heading('Masuk ke akun Anda', size: 22),
+            const SizedBox(height: 5),
+            UI.caption(
+              'Kelola waktu kerja dengan lebih pasti.',
+              size: 12,
+            ),
+            const SizedBox(height: 27),
+            UI.caption(
+              'EMAIL / ID KARYAWAN',
+              size: 11,
+              weight: FontWeight.w800,
+            ),
+            const SizedBox(height: 9),
+            TextField(
+              key: const Key('login_email'),
+              controller: email,
+              keyboardType: TextInputType.emailAddress,
+              textInputAction: TextInputAction.next,
+              autofillHints: const [AutofillHints.username],
+              autocorrect: false,
+              decoration: _inputDecoration(
+                'nama@perusahaan.co.id',
+                Icons.mail_outline_rounded,
+              ),
+            ),
+            const SizedBox(height: 21),
+            UI.caption(
+              'KATA SANDI',
+              size: 11,
+              weight: FontWeight.w800,
+            ),
+            const SizedBox(height: 9),
+            TextField(
+              key: const Key('login_password'),
+              controller: password,
+              obscureText: hidden,
+              textInputAction: TextInputAction.done,
+              autofillHints: const [AutofillHints.password],
+              onSubmitted: (_) => _handleLogin(),
+              decoration: _inputDecoration(
+                'Kata sandi',
+                Icons.lock_outline_rounded,
+                trailing: IconButton(
+                  tooltip: hidden ? 'Tampilkan kata sandi' : 'Sembunyikan kata sandi',
+                  icon: Icon(
+                    hidden
+                        ? Icons.visibility_off_outlined
+                        : Icons.visibility_outlined,
+                    color: NadiColors.navy,
+                  ),
+                  onPressed: () => setState(() => hidden = !hidden),
+                ),
+              ),
+            ),
+            Align(
+              alignment: Alignment.centerRight,
+              child: TextButton(
+                onPressed: () => UI.notice(
+                  context,
+                  'Pemulihan kata sandi belum tersedia. Hubungi administrator.',
+                ),
+                child: const Text(
+                  'Lupa kata sandi?',
+                  style: TextStyle(
+                    fontSize: 12,
+                    fontWeight: FontWeight.w600,
+                  ),
+                ),
+              ),
+            ),
+            const SizedBox(height: 8),
+            UI.caption(
+              'PILIH MODE AKSES',
+              size: 11,
+              weight: FontWeight.w800,
+            ),
+            const SizedBox(height: 11),
+            Container(
+              padding: const EdgeInsets.all(4),
+              decoration: BoxDecoration(
+                borderRadius: BorderRadius.circular(19),
+                border: Border.all(color: _fieldOutline),
+                color: _fieldFill,
+              ),
+              child: Row(
+                children: [
+                  _modeOption('Server API', Icons.dns_outlined, true),
+                  _modeOption(
+                    'Pratinjau UI',
+                    Icons.desktop_windows_outlined,
+                    false,
+                  ),
+                ],
+              ),
+            ),
+            if (!serverMode) ...[
+              const SizedBox(height: 15),
+              DropdownButtonFormField<NadiRole>(
+                initialValue: role,
+                isExpanded: true,
+                decoration: _inputDecoration(
+                  'Pilih role untuk pratinjau',
+                  Icons.people_outline_rounded,
+                ),
+                items: NadiRole.values
+                    .map(
+                      (r) => DropdownMenuItem(
+                        value: r,
+                        child: Text(r.label),
+                      ),
+                    )
+                    .toList(),
+                onChanged: submitting
+                    ? null
+                    : (value) => setState(() => role = value ?? role),
+              ),
+            ],
+            const SizedBox(height: 24),
+            Container(
+              width: double.infinity,
+              height: 54,
+              decoration: BoxDecoration(
+                borderRadius: BorderRadius.circular(15),
+                gradient: const LinearGradient(
+                  begin: Alignment.topLeft,
+                  end: Alignment.bottomRight,
+                  colors: [Color(0xFF2586FF), NadiColors.royal, Color(0xFF123BD4)],
+                ),
+                boxShadow: const [
+                  BoxShadow(
+                    color: Color(0x34245BE8),
+                    blurRadius: 19,
+                    offset: Offset(0, 9),
+                  ),
+                ],
+              ),
+              child: Material(
+                color: Colors.transparent,
+                borderRadius: BorderRadius.circular(15),
+                child: InkWell(
+                  borderRadius: BorderRadius.circular(15),
+                  onTap: submitting ? null : _handleLogin,
+                  child: Center(
+                    child: Row(
+                      mainAxisSize: MainAxisSize.min,
+                      children: [
+                        if (submitting)
+                          const SizedBox(
+                            width: 18,
+                            height: 18,
+                            child: CircularProgressIndicator(
+                              strokeWidth: 2,
+                              color: Colors.white,
+                            ),
+                          )
+                        else
+                          const Icon(
+                            Icons.arrow_forward_rounded,
+                            color: Colors.white,
+                            size: 20,
+                          ),
+                        const SizedBox(width: 9),
+                        Text(
+                          submitting ? 'Menghubungkan...' : 'Masuk',
+                          style: const TextStyle(
+                            color: Colors.white,
+                            fontSize: 15,
+                            fontWeight: FontWeight.w800,
+                          ),
+                        ),
+                      ],
+                    ),
+                  ),
+                ),
+              ),
+            ),
+            const SizedBox(height: 22),
+            Center(
+              child: Text(
+                serverMode
+                    ? 'Server memakai autentikasi role asli. IP server: lihat README.'
+                    : 'Mode ini khusus pratinjau visual tanpa backend.',
+                textAlign: TextAlign.center,
+                style: const TextStyle(
+                  color: NadiColors.muted,
+                  fontSize: 10.5,
+                  height: 1.4,
+                ),
+              ),
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      backgroundColor: Colors.white,
+      backgroundColor: NadiColors.canvas,
       body: SafeArea(
-          child: LayoutBuilder(
-              builder: (context, c) => SingleChildScrollView(
-                  child: ConstrainedBox(
-                      constraints: BoxConstraints(minHeight: c.maxHeight),
-                      child: Column(
-                          crossAxisAlignment: CrossAxisAlignment.stretch,
-                          children: [
-                            Container(
-                                height: 285,
-                                padding:
-                                    const EdgeInsets.fromLTRB(27, 42, 27, 30),
-                                decoration:
-                                    const BoxDecoration(color: NadiColors.navy),
-                                child: Stack(children: [
-                                  Positioned(
-                                      right: -62,
-                                      top: -95,
-                                      child: Container(
-                                          width: 245,
-                                          height: 245,
-                                          decoration: const BoxDecoration(
-                                              shape: BoxShape.circle,
-                                              color: Color(0xFF1C3D5C)))),
-                                  Positioned(
-                                      right: -20,
-                                      top: 3,
-                                      child: Container(
-                                          width: 168,
-                                          height: 168,
-                                          decoration: const BoxDecoration(
-                                              shape: BoxShape.circle,
-                                              color: Color(0x221E6389)))),
-                                  Column(
-                                      crossAxisAlignment:
-                                          CrossAxisAlignment.start,
-                                      children: [
-                                        Row(children: [
-                                          const Text('N',
-                                              style: TextStyle(
-                                                  color: Colors.white,
-                                                  fontSize: 25,
-                                                  fontWeight: FontWeight.w900)),
-                                          const SizedBox(width: 5),
-                                          Container(
-                                              width: 5,
-                                              height: 5,
-                                              decoration: const BoxDecoration(
-                                                  color: NadiColors.red,
-                                                  shape: BoxShape.circle)),
-                                          const SizedBox(width: 12),
-                                          const Text('nadi',
-                                              style: TextStyle(
-                                                  color: Colors.white,
-                                                  fontSize: 26,
-                                                  fontWeight: FontWeight.w800))
-                                        ]),
-                                        const Spacer(),
-                                        const Text(
-                                            'Satu ritme.\nUntuk seluruh tim.',
-                                            style: TextStyle(
-                                                color: Colors.white,
-                                                fontSize: 30,
-                                                height: 1.16,
-                                                fontWeight: FontWeight.w800)),
-                                      ])
-                                ])),
-                            Padding(
-                                padding:
-                                    const EdgeInsets.fromLTRB(25, 27, 25, 18),
-                                child: Column(
-                                    crossAxisAlignment:
-                                        CrossAxisAlignment.start,
-                                    children: [
-                                      UI.heading('Masuk ke akun Anda',
-                                          size: 20),
-                                      UI.gap(5),
-                                      UI.caption(
-                                          'Kelola waktu kerja dengan lebih pasti.'),
-                                      UI.gap(30),
-                                      UI.caption('EMAIL / ID KARYAWAN',
-                                          size: 10, weight: FontWeight.w800),
-                                      UI.gap(8),
-                                      TextField(
-                                          key: const Key('login_email'),
-                                          controller: email,
-                                          decoration: const InputDecoration(
-                                              hintText:
-                                                  'nama@perusahaan.co.id')),
-                                      UI.gap(20),
-                                      UI.caption('KATA SANDI',
-                                          size: 10, weight: FontWeight.w800),
-                                      UI.gap(8),
-                                      TextField(
-                                          key: const Key('login_password'),
-                                          controller: password,
-                                          obscureText: hidden,
-                                          decoration: InputDecoration(
-                                              hintText: 'Kata sandi',
-                                              suffixIcon: IconButton(
-                                                  icon: Icon(hidden
-                                                      ? Icons
-                                                          .visibility_off_outlined
-                                                      : Icons
-                                                          .visibility_outlined),
-                                                  onPressed: () => setState(
-                                                      () =>
-                                                          hidden = !hidden)))),
-                                      Align(
-                                          alignment: Alignment.centerRight,
-                                          child: TextButton(
-                                              onPressed: () => UI.notice(
-                                                  context,
-                                                  'Reset kata sandi memerlukan backend. Ini frontend demo.'),
-                                              child: const Text(
-                                                  'Lupa kata sandi?',
-                                                  style: TextStyle(
-                                                      fontSize: 11)))),
-                                      UI.gap(10),
-                                      UI.caption('PILIH MODE AKSES',
-                                          size: 10, weight: FontWeight.w800),
-                                      UI.gap(7),
-                                      SegmentedButton<bool>(
-                                          segments: const [
-                                            ButtonSegment(
-                                                value: true,
-                                                label: Text('Server API')),
-                                            ButtonSegment(
-                                                value: false,
-                                                label: Text('Pratinjau UI'))
-                                          ],
-                                          selected: {
-                                            serverMode
-                                          },
-                                          onSelectionChanged: (v) => setState(
-                                              () => serverMode = v.first)),
-                                      if (!serverMode) ...[
-                                        UI.gap(14),
-                                        DropdownButtonFormField<NadiRole>(
-                                            initialValue: role,
-                                            isExpanded: true,
-                                            items: NadiRole.values
-                                                .map((r) => DropdownMenuItem(
-                                                    value: r,
-                                                    child: Text(r.label)))
-                                                .toList(),
-                                            onChanged: (v) => setState(
-                                                () => role = v ?? role))
-                                      ],
-                                      UI.gap(20),
-                                      UI.primary(
-                                          submitting
-                                              ? 'Menghubungkan...'
-                                              : 'Masuk', () async {
-                                        if (submitting) return;
-                                        if (email.text.trim().isEmpty ||
-                                            password.text.trim().isEmpty) {
-                                          UI.notice(context,
-                                              'Isi email karyawan dan kata sandi.');
-                                          return;
-                                        }
-                                        if (!serverMode) {
-                                          widget.store.login(role);
-                                          return;
-                                        }
-                                        setState(() => submitting = true);
-                                        try {
-                                          final session = await NadiApi().login(
-                                              email.text.trim(), password.text);
-                                          if (mounted) {
-                                            widget.onConnected(session);
-                                          }
-                                        } catch (e) {
-                                          if (context.mounted) {
-                                            UI.notice(context, e.toString());
-                                          }
-                                        } finally {
-                                          if (mounted) {
-                                            setState(() => submitting = false);
-                                          }
-                                        }
-                                      }, icon: Icons.arrow_forward),
-                                      UI.gap(14),
-                                      Center(
-                                          child: UI.caption(
-                                              serverMode
-                                                  ? 'Server memakai autentikasi role asli. IP server: lihat README.'
-                                                  : 'Mode ini khusus pratinjau visual tanpa backend.',
-                                              size: 11)),
-                                    ]))
-                          ]))))),
+        child: LayoutBuilder(
+          builder: (context, constraints) {
+            final desktop = constraints.maxWidth > 600;
+            return SingleChildScrollView(
+              keyboardDismissBehavior: ScrollViewKeyboardDismissBehavior.onDrag,
+              child: Center(
+                child: ConstrainedBox(
+                  constraints: BoxConstraints(
+                    maxWidth: 470,
+                    minHeight: constraints.maxHeight,
+                  ),
+                  child: Container(
+                    decoration: BoxDecoration(
+                      color: Colors.transparent,
+                      borderRadius: BorderRadius.circular(28),
+                      boxShadow: desktop
+                          ? const [
+                              BoxShadow(
+                                color: Color(0x110B2850),
+                                blurRadius: 40,
+                                offset: Offset(0, 14),
+                              ),
+                            ]
+                          : null,
+                    ),
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.stretch,
+                      children: [
+                        _brandHero(desktop: desktop),
+                        _loginCard(),
+                      ],
+                    ),
+                  ),
+                ),
+              ),
+            );
+          },
+        ),
+      ),
     );
   }
 }
