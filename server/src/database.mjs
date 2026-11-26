@@ -77,6 +77,9 @@ export function createDb(file = process.env.NADI_DB_PATH || resolve('data/nadi.s
     CREATE INDEX IF NOT EXISTS ix_schedule_date ON schedules(work_date);
     CREATE INDEX IF NOT EXISTS ix_attendance_date ON attendance(work_date);
   `);
+  // Safe, additive migration for databases created before optional profile photos.
+  const cols = db.prepare('PRAGMA table_info(users)').all().map(c => c.name);
+  if (!cols.includes('avatar_data')) db.exec('ALTER TABLE users ADD COLUMN avatar_data TEXT');
   return db;
 }
 export function seedDemo(db) {

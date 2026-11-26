@@ -86,3 +86,32 @@ test('department head requests require HRD, and invalid dates are rejected',asyn
  assert.equal(approved.status,200);assert.equal(approved.request.status,'disetujui');
  assert.equal((await request('POST','/api/requests',hrd,{kind:'cuti',start_date:'2026-12-05',end_date:'2026-12-05',reason:'Keperluan pribadi'})).status,403);
 });
+
+test('optional profile avatar: upload, read after login, reject invalid image, remove',async()=>{
+  const employee=await login('fajar@nadi.test');
+  const data='data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAYAAAAfFcSJAAAADUlEQVQIHWP4z8DwHwAFgAI/ScL/nwAAAABJRU5ErkJggg==';
+  const first=await request('PATCH','/api/me/avatar',employee,{avatar_data:data});
+  assert.equal(first.status,200,first.error);
+  assert.equal(first.user.avatar_data,data);
+  const another=await login('fajar@nadi.test');
+  assert.equal((await request('GET','/api/me',another)).user.avatar_data,data);
+  assert.equal((await request('PATCH','/api/me/avatar',employee,{avatar_data:'data:image/svg+xml;base64,PHN2Zz4='})).status,422);
+  assert.equal((await request('PATCH','/api/me/avatar',employee,{avatar_data:'data:image/png;base64,YWJjZA=='})).status,422);
+  assert.equal((await request('PATCH','/api/me/avatar',employee,{avatar_data:'data:image/png;base64,'+'A'.repeat(200004)})).status,422);
+  assert.equal((await request('PATCH','/api/me/avatar',null,{avatar_data:data})).status,401);
+  const removed=await request('PATCH','/api/me/avatar',employee,{avatar_data:null});
+  assert.equal(removed.status,200,removed.error);
+  assert.equal(removed.user.avatar_data,null);
+  assert.equal((await request('GET','/api/me',another)).user.avatar_data,null);
+});
+
+test('account password update requires old password, keeps current session',async()=>{
+  const token=await login('fajar@nadi.test');
+  assert.equal((await request('POST','/api/me/password',token,{current_password:'wrong',new_password:'NewSecurePass!2026'})).status,403);
+  assert.equal((await request('POST','/api/me/password',token,{current_password:pw,new_password:'short'})).status,422);
+  const updated=await request('POST','/api/me/password',token,{current_password:pw,new_password:'NewSecurePass!2026'});
+  assert.equal(updated.status,200,updated.error);
+  assert.equal((await request('GET','/api/me',token)).status,200);
+  assert.equal((await request('POST','/api/login',null,{email:'fajar@nadi.test',password:pw})).status,401);
+  assert.equal((await request('POST','/api/login',null,{email:'fajar@nadi.test',password:'NewSecurePass!2026'})).status,200);
+});
